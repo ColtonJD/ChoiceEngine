@@ -10,7 +10,17 @@ Imported.ChoiceEngine = true;
 var ChoiceEngine = ChoiceEngine || {};
 ChoiceEngine.Core = ChoiceEngine.Core || {};
 
+//-----------------------------------------------------------------------------
+//  New Function Descriptions
+//-----------------------------------------------------------------------------
+ /*
+ * No new functions... yet!
+ * 
+ */
 
+//-----------------------------------------------------------------------------
+//  Parameters
+//-----------------------------------------------------------------------------
  /*:
  * @plugindesc Choice Engine core functionality and system function
  * @author Choice
@@ -26,9 +36,6 @@ ChoiceEngine.Core = ChoiceEngine.Core || {};
  *
  */
 
-//-----------------------------------------------------------------------------
-//  Parameters
-//-----------------------------------------------------------------------------
 ChoiceEngine.Core.Params = PluginManager.parameters('ChoiceCore');
 var screenWidth = Number(ChoiceEngine.Core.Params['screenWidth'], 816);
 var screenHeight = Number(ChoiceEngine.Core.Params['screenHeight'], 624);
