@@ -101,7 +101,6 @@ Window_Message.prototype.startMessage = function() {
         
         target.x -= (this.width / 2) + ChoiceEngine.Message.Target_X_Offset;
         target.y -= this.height + ChoiceEngine.Message.Target_Y_Offset; 
-        
         this.customPlacement(target);
         this.updateBackground();
         this.open();
@@ -111,6 +110,11 @@ Window_Message.prototype.startMessage = function() {
         this.updateBackground();
         this.open();
     }
+};
+ChoiceEngine.Message._updatePlacement = Window_Message.prototype.updatePlacement
+Window_Message.prototype.updatePlacement = function() {
+    ChoiceEngine.Message._updatePlacement.call(this);
+    this.x = 0;
 };
 
 Window_Message.prototype.customMessage = function() {
@@ -154,10 +158,70 @@ Window_Message.prototype.customMessage = function() {
 }*/
 
 Window_Message.prototype.customPlacement = function(target) {
+    this.createWindowTail();
     this._positionType = $gameMessage.positionType();
     this.y = target.y;
     this.x = target.x;
     this._goldWindow.y = this.y > 0 ? 0 : Graphics.boxHeight - this._goldWindow.height;
 };
+
+Window_Message.prototype.createWindowTail = function() {
+    this._tail = new Window_Tail();
+    this.addChild(this._tail);
+}
+
+/*Window_Message.prototype.createWindowTail = function(x, y) {
+	this._tailSprite = new Sprite();
+    this._tailSprite.bitmap = ImageManager.loadSystem('WindowArrow');
+    this._tailSprite.x = x;
+    this._tailSprite.y = y;
+	this._tailSprite.opacity = 0;
+    this.addChild(this._tailSprite);
+    console.log('hit');
+}; */
+Window_Message.prototype.terminateMessage = function() {
+    this.close();
+    this._goldWindow.close();
+    $gameMessage.clear();
+    if(this._tail){
+        this.removeChild(this._tail)
+    }
+};
+
+
+//-----------------------------------------------------------------------------
+//  Sprites
+//-----------------------------------------------------------------------------
+
+Window_Tail = function() {
+    this.initialize.apply(this, arguments);
+}
+
+Window_Tail.prototype = Object.create(Sprite_Base.prototype);
+Window_Tail.prototype.constructor = Window_Tail;
+
+Window_Tail.prototype.initialize = function() {
+    Sprite_Base.prototype.initialize.call(this);
+    this.createBitmap();
+};
+
+Window_Tail.prototype.createBitmap = function() {
+    this.bitmap = ImageManager.loadPicture('WindowArrow');
+}
+
+Window_Tail.prototype.update = function() {
+    Sprite_Base.prototype.update.call(this);
+    this.updatePosition();
+};
+
+Window_Tail.prototype.updatePosition = function() {
+    this.x = Graphics.boxWidth / 2 - 20;
+    this.y = 175;
+};
+
+
+
+
+
 
 })();
