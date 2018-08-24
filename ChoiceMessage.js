@@ -11,29 +11,6 @@ var ChoiceEngine = ChoiceEngine || {};
 ChoiceEngine.Message = ChoiceEngine.Message || {};
 
 //-----------------------------------------------------------------------------
-//  New Function Descriptions
-//-----------------------------------------------------------------------------
- /*
- * Function: Window_Message.prototype.customMessage()
- * Desc: Checks message for custom settings and returns object with the
- * flags / values
- * Matches on:
- *  /target[target] (target an event or player)
- *  /fitmessage (Fits message to fit text)
- * Returns:
- * target{
- *  found: Boolean, (is there a target)
- *  "x": Number (x position of target adjusted for offset),
- *  "y": Number (y position of taget adjusted for offset),
- *  "fitmsg": Boolean (flag to shrink message) 
- * }
- * 
- * Function: Window_Message.prototype.customPlacement()
- * Desc: Replaces Window_Message.updatePlacement when moving message to   
- * a custom location
- */
-
-//-----------------------------------------------------------------------------
 //  Parameters
 //-----------------------------------------------------------------------------
  /*:
@@ -51,12 +28,86 @@ ChoiceEngine.Message = ChoiceEngine.Message || {};
  * @param Target Offset Y
  * @desc Y Offset for Targeted Messages
  * @default 150
+ *
+ * @help
+ * //-----------------------------------------------------------------------------
+ * //  Description
+ * //-----------------------------------------------------------------------------
+ *  Choice Engine Message System. Built around "Bubble Dialouge" style messages.
+ * 
+ * //-----------------------------------------------------------------------------
+ * //  New Function Descriptions
+ * //-----------------------------------------------------------------------------
+ *
+ * Function: Window_Message.prototype.customPlacement(targetid)
+ * Desc: Takes a targetid, determines its position, and moves the Game_message
+ * window adjusted for offsets.
+ * flags / values
+ * Matches on:
+ *  (Done via convertEscapeCharacters)
+ *  /target[target] (target an event or player)
+ *  /fitmessage (Fits message to fit text)
+ * Returns: void
+ * 
+ * Window_CharName(name)
+ * Desc: Instanties a new Window_CharName object (added as a child 
+ * of a parent window)
+ * 
+ * Function: Window_Message.prototype.createWindowTail()
+ * Desc: Instantiates a new Window_Tail on the Window_Message object that called it. 
+ * Returns: void
+ * 
+ * Window_Tail()
+ * Desc: Instantiates a new Window_Tail object (added as a child of a parent window)
+ * Returns: Void
  */
+
 ChoiceEngine.Message.Params = PluginManager.parameters('ChoiceMessage');
 ChoiceEngine.Message.Target_Y_Offset = Number(ChoiceEngine.Message.Params['Target Offset Y']);
 ChoiceEngine.Message.Target_X_Offset = Number(ChoiceEngine.Message.Params['Target Offset X']);
 
 (function() {
+
+//-----------------------------------------------------------------------------
+//  Game_Message
+//-----------------------------------------------------------------------------
+
+ChoiceEngine.Message.Game_Message_Clear = Game_Message.prototype.clear;
+Game_Message.prototype.clear = function() {
+    ChoiceEngine.Message.Game_Message_Clear.call(this);
+    this._speaker = false;
+    this._speakerName = undefined;
+    this._target = false;
+    this._targetid = undefined;
+    this._fitted = false;
+};
+
+//-----------------------------------------------------------------------------
+//  Graphics
+//-----------------------------------------------------------------------------
+
+Graphics._createGameFontLoader = function() {
+    this._createFontLoader('GameFont');
+    this._createFontLoader('MessageFont');
+    this._createFontLoader('NameFont');
+};
+
+//-----------------------------------------------------------------------------
+//  Scene_Boot
+//-----------------------------------------------------------------------------
+
+Scene_Boot.prototype.isGameFontLoaded = function() {
+    if (Graphics.isFontLoaded('GameFont') 
+    && Graphics.isFontLoaded('MessageFont') 
+    && Graphics.isFontLoaded('NameFont')) {
+        return true;
+    } else if (!Graphics.canUseCssFontLoading()){
+        var elapsed = Date.now() - this._startDate;
+        if (elapsed >= 60000) {
+            throw new Error('Failed to load GameFont');
+        }
+    }
+};
 
 //-----------------------------------------------------------------------------
 //  Window_Base
@@ -78,8 +129,47 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
         return this.partyMemberName(parseInt(arguments[1]));
     }.bind(this));
     text = text.replace(/\x1bG/gi, TextManager.currencyUnit);
-    text = text.replace(/\[.*?\]/g, '');
+    text = text.replace(/\bTARGET\[(\d+)\]/gi, function(){
+        $gameMessage._target = true;
+        $gameMessage._targetid = arguments[1];
+        return '';
+    }.bind(this));
+    text = text.replace(/CHARNAME\[(.*?)\]/gi, function(){
+        $gameMessage._speaker = true;
+        $gameMessage._speakerName = arguments[1];
+        return '';
+    });
+    text = text.replace(/\bFITMSG/gi, function(){
+        $gameMessage._fitted = true;
+        return '';
+    });
     return text;
+};
+
+//-----------------------------------------------------------------------------
+//  Window_CharName
+//-----------------------------------------------------------------------------
+
+Window_CharName = function() {
+    this.initialize.apply(this, arguments);
+}
+
+Window_CharName.prototype = Object.create(Window_Base.prototype);
+Window_CharName.prototype.constructor = Window_CharName;
+
+Window_CharName.prototype.initialize = function(name) {
+    this._windowskin = null;
+
+    Window_Base.prototype.initialize.call(this, 5, -30, 200, 100);
+    this.setBackgroundType(2);
+    this.drawText(name, 0, 0, 200, 'left')
+
+};
+
+Window_CharName.prototype.resetFontSettings = function() {
+    this.contents.fontFace = 'MessageFont';
+    this.contents.fontSize = this.standardFontSize();
+    this.resetTextColor();
 };
 
 //-----------------------------------------------------------------------------
@@ -89,19 +179,18 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
 Window_Message.prototype.startMessage = function() {
     this._textState = {};
     this._textState.index = 0;
-    var target = new Window_Message.prototype.customMessage();
 
     this._textState.text = this.convertEscapeCharacters($gameMessage.allText());
-    
-    var temp = this.textWidth($gameMessage.text);
-    console.log(temp);
-    
-    if(target.found == true){
-        this.newPage(this._textState);
+
+    if($gameMessage._speaker === true){
+        this.createCharName($gameMessage._speakerName);
+    }else{
         
-        target.x -= (this.width / 2) + ChoiceEngine.Message.Target_X_Offset;
-        target.y -= this.height + ChoiceEngine.Message.Target_Y_Offset; 
-        this.customPlacement(target);
+    }
+
+    if($gameMessage._target === true){
+        this.newPage(this._textState);
+        this.customPlacement($gameMessage._targetid);
         this.updateBackground();
         this.open();
     }else{
@@ -111,89 +200,62 @@ Window_Message.prototype.startMessage = function() {
         this.open();
     }
 };
-ChoiceEngine.Message._updatePlacement = Window_Message.prototype.updatePlacement
-Window_Message.prototype.updatePlacement = function() {
-    ChoiceEngine.Message._updatePlacement.call(this);
-    this.x = 0;
-};
-
-Window_Message.prototype.customMessage = function() {
-    this.found = false;
-    var text = $gameMessage.allText();
-
-    text = text.replace(/\bTARGET\[(\d+)\]/gi, function() {
-            var eventid = arguments[1];
-            if (eventid > 0) {
-            this.found = true; 
-            var ev = $gameMap.event(eventid);
-            this.x = ev.screenX();
-            this.y = ev.screenY();
-        } else if (eventid == 0){
-            this.found = true; 
-            this.x = $gamePlayer.screenX();
-            this.y = $gamePlayer.screenY();
-        } else {
-
-        };
-        return '';
-    }.bind(this));
-    
-    text = text.replace(/\bFITMSG/gi, function() {
-        console.log("fit message found");
-        return ''
-    }.bind(this));
-
-    return this;
-};
-
-/*Window_Message.prototype.sizeWindow = function() {
-    var textArr = $gameMessage._texts;
-    for (var i = 0; i < textArr.length; i++) {
-        if($gameMessage._texts[i] == ''){
-            textArr.slice(i, i+1);
-        } else {
-            console.log(textArr[i]);
-        }
-    }
-}*/
-
-Window_Message.prototype.customPlacement = function(target) {
-    this.createWindowTail();
-    this._positionType = $gameMessage.positionType();
-    this.y = target.y;
-    this.x = target.x;
-    this._goldWindow.y = this.y > 0 ? 0 : Graphics.boxHeight - this._goldWindow.height;
-};
 
 Window_Message.prototype.createWindowTail = function() {
     this._tail = new Window_Tail();
     this.addChild(this._tail);
 }
 
-/*Window_Message.prototype.createWindowTail = function(x, y) {
-	this._tailSprite = new Sprite();
-    this._tailSprite.bitmap = ImageManager.loadSystem('WindowArrow');
-    this._tailSprite.x = x;
-    this._tailSprite.y = y;
-	this._tailSprite.opacity = 0;
-    this.addChild(this._tailSprite);
-    console.log('hit');
-}; */
+Window_Message.prototype.createCharName = function(name) {
+    this._charName = new Window_CharName(name);
+    this.addChild(this._charName);
+}
+
+Window_Message.prototype.customPlacement = function(targetid) {
+    this.createWindowTail();
+    this._positionType = $gameMessage.positionType();
+    if (targetid > 0) {
+        this.found = true; 
+        var ev = $gameMap.event(targetid);
+        this.x = ev.screenX() - (this.width / 2) + ChoiceEngine.Message.Target_X_Offset;
+        this.y = ev.screenY() - this.height - ChoiceEngine.Message.Target_Y_Offset;
+    } else if (targetid == 0){
+        this.found = true; 
+        this.x = $gamePlayer.screenX() - (this.width / 2) + ChoiceEngine.Message.Target_X_Offset;
+        this.y = $gamePlayer.screenY() - this.height - ChoiceEngine.Message.Target_Y_Offset;
+    }
+    this._goldWindow.y = this.y > 0 ? 0 : Graphics.boxHeight - this._goldWindow.height;
+};
+
+ChoiceEngine.Message._updatePlacement = Window_Message.prototype.updatePlacement
+Window_Message.prototype.updatePlacement = function() {
+    ChoiceEngine.Message._updatePlacement.call(this);
+    this.x = 0;
+};
+
+Window_Message.prototype.resetFontSettings = function() {
+    this.contents.fontFace = 'MessageFont';
+    this.contents.fontSize = this.standardFontSize();
+    this.resetTextColor();
+};
+
+ChoiceEngine.Message._terminateMessage = Window_Message.prototype.terminateMessage;
 Window_Message.prototype.terminateMessage = function() {
-    this.close();
-    this._goldWindow.close();
-    $gameMessage.clear();
+    ChoiceEngine.Message._terminateMessage.call(this);
     if(this._tail){
         this.removeChild(this._tail)
     }
+    if(this._charName){
+        this.removeChild(this._charName)
+    }
 };
 
-
 //-----------------------------------------------------------------------------
-//  Sprites
+//  Window_Tail
 //-----------------------------------------------------------------------------
 
-Window_Tail = function() {
+Window_Tail = function(name) {
+    arguments.name = name;
     this.initialize.apply(this, arguments);
 }
 
@@ -218,7 +280,6 @@ Window_Tail.prototype.updatePosition = function() {
     this.x = Graphics.boxWidth / 2 - 20;
     this.y = 175;
 };
-
 
 
 
