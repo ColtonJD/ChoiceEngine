@@ -21,6 +21,21 @@ ChoiceEngine.Message = ChoiceEngine.Message || {};
  * @desc Graphic that connects to the speech bubble. 
  * @default Pointer1
  *
+ * @param Name Color Code
+ * @type number;
+ * @desc Color code for character names. 
+ * @default 15
+ * 
+ * @param Name Outline Color Code
+ * @type number;
+ * @desc Color code for character name outline. 
+ * @default 27
+ * 
+ * @param Name Outline Width
+ * @type number;
+ * @desc Width of the name outline color
+ * @default 7
+ * 
  * @param Target Offset X
  * @desc X Offset for Targeted Messages
  * @default 0
@@ -65,6 +80,9 @@ ChoiceEngine.Message = ChoiceEngine.Message || {};
 ChoiceEngine.Message.Params = PluginManager.parameters('ChoiceMessage');
 ChoiceEngine.Message.Target_Y_Offset = Number(ChoiceEngine.Message.Params['Target Offset Y']);
 ChoiceEngine.Message.Target_X_Offset = Number(ChoiceEngine.Message.Params['Target Offset X']);
+ChoiceEngine.Message.Name_Color = Number(ChoiceEngine.Message.Params['Name Color Code']);
+ChoiceEngine.Message.Name_Outline = Number(ChoiceEngine.Message.Params['Name Outline Color Code']);
+ChoiceEngine.Message.Name_Outline_Width = Number(ChoiceEngine.Message.Params['Name Outline Width']);
 
 (function() {
 
@@ -160,7 +178,7 @@ Window_CharName.prototype.constructor = Window_CharName;
 Window_CharName.prototype.initialize = function(name) {
     this._windowskin = null;
 
-    Window_Base.prototype.initialize.call(this, 5, -30, 200, 100);
+    Window_Base.prototype.initialize.call(this, -8, -33, 200, 100);
     this.setBackgroundType(2);
     this.drawText(name, 0, 0, 200, 'left')
 
@@ -170,6 +188,12 @@ Window_CharName.prototype.resetFontSettings = function() {
     this.contents.fontFace = 'MessageFont';
     this.contents.fontSize = this.standardFontSize();
     this.resetTextColor();
+    this.contents.outlineColor = this.textColor(ChoiceEngine.Message.Name_Outline);
+    this.contents.outlineWidth = ChoiceEngine.Message.Name_Outline_Width;
+};
+
+Window_CharName.prototype.resetTextColor = function() {
+    this.changeTextColor(this.textColor(ChoiceEngine.Message.Name_Color));
 };
 
 //-----------------------------------------------------------------------------
