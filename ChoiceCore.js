@@ -10,13 +10,6 @@ Imported.ChoiceEngine = true;
 var ChoiceEngine = ChoiceEngine || {};
 ChoiceEngine.Core = ChoiceEngine.Core || {};
 
-//-----------------------------------------------------------------------------
-//  New Function Descriptions
-//-----------------------------------------------------------------------------
- /*
- * No new functions... yet!
- * 
- */
 
 //-----------------------------------------------------------------------------
 //  Parameters
@@ -34,6 +27,17 @@ ChoiceEngine.Core = ChoiceEngine.Core || {};
  * @default 720
  *
  *
+ * @help
+ * //-----------------------------------------------------------------------------
+ * //  Description
+ * //-----------------------------------------------------------------------------
+ *  Core functionality for the Choice Engine.
+ *  
+ * //-----------------------------------------------------------------------------
+ * //  New Function Descriptions
+ * //-----------------------------------------------------------------------------
+ * No new functions... yet!
+ * 
  */
 
 ChoiceEngine.Core.Params = PluginManager.parameters('ChoiceCore');
