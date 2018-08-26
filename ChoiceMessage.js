@@ -21,6 +21,31 @@ ChoiceEngine.Message = ChoiceEngine.Message || {};
  * @desc Graphic that connects to the speech bubble. 
  * @default Pointer1
  *
+ * @param Message Text Size
+ * @type number;
+ * @desc Font size for names. 
+ * @default 24
+ * 
+ * @param Text Color Code
+ * @type number;
+ * @desc Color code for message text. 
+ * @default 15
+ * 
+ * @param Text Outline Color Code
+ * @type number;
+ * @desc Color code for message text outline. 
+ * @default 15
+ * 
+ * @param Text Outline Width
+ * @type number;
+ * @desc Width of the message outline color
+ * @default 0
+ * 
+ * @param Name Text Size
+ * @type number;
+ * @desc Font size for names. 
+ * @default 32
+ * 
  * @param Name Color Code
  * @type number;
  * @desc Color code for character names. 
@@ -80,9 +105,14 @@ ChoiceEngine.Message = ChoiceEngine.Message || {};
 ChoiceEngine.Message.Params = PluginManager.parameters('ChoiceMessage');
 ChoiceEngine.Message.Target_Y_Offset = Number(ChoiceEngine.Message.Params['Target Offset Y']);
 ChoiceEngine.Message.Target_X_Offset = Number(ChoiceEngine.Message.Params['Target Offset X']);
+ChoiceEngine.Message.Name_Size = Number(ChoiceEngine.Message.Params['Name Text Size']);
 ChoiceEngine.Message.Name_Color = Number(ChoiceEngine.Message.Params['Name Color Code']);
 ChoiceEngine.Message.Name_Outline = Number(ChoiceEngine.Message.Params['Name Outline Color Code']);
 ChoiceEngine.Message.Name_Outline_Width = Number(ChoiceEngine.Message.Params['Name Outline Width']);
+ChoiceEngine.Message.Text_Size = Number(ChoiceEngine.Message.Params['Message Text Size']);
+ChoiceEngine.Message.Text_Color = Number(ChoiceEngine.Message.Params['Text Color Code']);
+ChoiceEngine.Message.Text_Outline = Number(ChoiceEngine.Message.Params['Text Outline Color Code']);
+ChoiceEngine.Message.Text_Outline_Width = Number(ChoiceEngine.Message.Params['Text Outline Width']);
 
 (function() {
 
@@ -131,38 +161,26 @@ Scene_Boot.prototype.isGameFontLoaded = function() {
 //  Window_Base
 //-----------------------------------------------------------------------------
 
+ChoiceEngine.Message.Base_convertEscapeCharacters = Window_Base.prototype.convertEscapeCharacters;
 Window_Base.prototype.convertEscapeCharacters = function(text) {
-    text = text.replace(/\\/g, '\x1b');
-    text = text.replace(/\x1b\x1b/g, '\\');
-    text = text.replace(/\x1bV\[(\d+)\]/gi, function() {
-        return $gameVariables.value(parseInt(arguments[1]));
-    }.bind(this));
-    text = text.replace(/\x1bV\[(\d+)\]/gi, function() {
-        return $gameVariables.value(parseInt(arguments[1]));
-    }.bind(this));
-    text = text.replace(/\x1bN\[(\d+)\]/gi, function() {
-        return this.actorName(parseInt(arguments[1]));
-    }.bind(this));
-    text = text.replace(/\x1bP\[(\d+)\]/gi, function() {
-        return this.partyMemberName(parseInt(arguments[1]));
-    }.bind(this));
-    text = text.replace(/\x1bG/gi, TextManager.currencyUnit);
-    text = text.replace(/\bTARGET\[(\d+)\]/gi, function(){
+    var text = ChoiceEngine.Message.Base_convertEscapeCharacters.call(this,text);
+    text = text.replace(/\x1bTARGET\[(\d+)\]/gi, function(){
         $gameMessage._target = true;
         $gameMessage._targetid = arguments[1];
         return '';
     }.bind(this));
-    text = text.replace(/CHARNAME\[(.*?)\]/gi, function(){
+    text = text.replace(/\x1bCHARNAME\[(.*?)\]/gi, function(){
         $gameMessage._speaker = true;
         $gameMessage._speakerName = arguments[1];
         return '';
     });
-    text = text.replace(/\bFITMSG/gi, function(){
+    text = text.replace(/\x1bFITMSG/gi, function(){
         $gameMessage._fitted = true;
         return '';
     });
     return text;
 };
+
 
 //-----------------------------------------------------------------------------
 //  Window_CharName
@@ -186,14 +204,10 @@ Window_CharName.prototype.initialize = function(name) {
 
 Window_CharName.prototype.resetFontSettings = function() {
     this.contents.fontFace = 'MessageFont';
-    this.contents.fontSize = this.standardFontSize();
-    this.resetTextColor();
+    this.contents.fontSize = ChoiceEngine.Message.Name_Size;
+    this.changeTextColor(this.textColor(ChoiceEngine.Message.Name_Color));
     this.contents.outlineColor = this.textColor(ChoiceEngine.Message.Name_Outline);
     this.contents.outlineWidth = ChoiceEngine.Message.Name_Outline_Width;
-};
-
-Window_CharName.prototype.resetTextColor = function() {
-    this.changeTextColor(this.textColor(ChoiceEngine.Message.Name_Color));
 };
 
 //-----------------------------------------------------------------------------
@@ -201,10 +215,11 @@ Window_CharName.prototype.resetTextColor = function() {
 //-----------------------------------------------------------------------------
 
 Window_Message.prototype.startMessage = function() {
+    
     this._textState = {};
     this._textState.index = 0;
-
-    this._textState.text = this.convertEscapeCharacters($gameMessage.allText());
+    
+    this._textState.text = this.buildText($gameMessage._texts);
 
     if($gameMessage._speaker === true){
         this.createCharName($gameMessage._speakerName);
@@ -218,6 +233,7 @@ Window_Message.prototype.startMessage = function() {
         this.updateBackground();
         this.open();
     }else{
+        this.width = Graphics.boxWidth;
         this.newPage(this._textState);
         this.updatePlacement();
         this.updateBackground();
@@ -225,9 +241,61 @@ Window_Message.prototype.startMessage = function() {
     }
 };
 
-Window_Message.prototype.createWindowTail = function() {
-    this._tail = new Window_Tail();
-    this.addChild(this._tail);
+Window_Message.prototype.buildText = function(arr) {
+    var lineCount = 0;
+    var charCount = 0;
+    var gameMessageArr = [];
+    var tempArr = [];
+    var minWidth = 20;
+    var maxWidth = 30;
+    for(i = 0; i < arr.length; i++){
+        var text = this.convertEscapeCharacters(arr[i]);
+        if(!text.replace(/\s/g, '').length){
+            console.log('spliced: ' + arr[i]);
+        } else{
+            lineCount++;
+            charCount += text.length;
+            tempArr.push(text);
+        }
+    }
+
+    var lineWidth = Math.max(Math.ceil(charCount / lineCount), minWidth); 
+    if(lineWidth > maxWidth){
+        lineWidth = maxWidth;
+    }
+
+    tempArr = tempArr.join(' ');
+    tempArr = tempArr.split(' ');
+    var currentLineText = [];
+    var currentLineLength = 0;
+    
+    for (j = 0; j < tempArr.length; j++){
+        if(((currentLineLength + tempArr[j].length) >= lineWidth) 
+        && gameMessageArr.length < 4){
+            currentLineLength = 0;
+
+            currentLineText.push('\n');
+            currentLineText = currentLineText.join(' ');
+            console.log(currentLineText);
+            gameMessageArr.push(currentLineText);
+
+            currentLineText = [];
+            currentLineText.push(tempArr[j]);
+            currentLineLength += tempArr[j].length;
+            if(j == tempArr.length - 1){
+                currentLineText = currentLineText.join(' ');
+                gameMessageArr.push(currentLineText);
+            } 
+        } else{
+            currentLineText.push(tempArr[j]);
+            currentLineLength += tempArr[j].length;
+            currentLineLength += 1;
+        }
+    }
+
+    this.height = gameMessageArr.length * 40 + this.standardPadding() * 2;;
+    this.width = this.contents.measureTextWidth(gameMessageArr[0]) + (this.standardPadding() * 3);
+    return gameMessageArr.join('');
 }
 
 Window_Message.prototype.createCharName = function(name) {
@@ -236,7 +304,7 @@ Window_Message.prototype.createCharName = function(name) {
 }
 
 Window_Message.prototype.customPlacement = function(targetid) {
-    this.createWindowTail();
+    
     this._positionType = $gameMessage.positionType();
     if (targetid > 0) {
         this.found = true; 
@@ -248,6 +316,7 @@ Window_Message.prototype.customPlacement = function(targetid) {
         this.x = $gamePlayer.screenX() - (this.width / 2) + ChoiceEngine.Message.Target_X_Offset;
         this.y = $gamePlayer.screenY() - this.height - ChoiceEngine.Message.Target_Y_Offset;
     }
+    this.messageTail();
     this._goldWindow.y = this.y > 0 ? 0 : Graphics.boxHeight - this._goldWindow.height;
 };
 
@@ -259,9 +328,12 @@ Window_Message.prototype.updatePlacement = function() {
 
 Window_Message.prototype.resetFontSettings = function() {
     this.contents.fontFace = 'MessageFont';
-    this.contents.fontSize = this.standardFontSize();
-    this.resetTextColor();
+    this.contents.fontSize = ChoiceEngine.Message.Text_Size;
+    this.changeTextColor(this.textColor(ChoiceEngine.Message.Text_Color));
+    this.contents.outlineColor = this.textColor(ChoiceEngine.Message.Text_Outline);
+    this.contents.outlineWidth = ChoiceEngine.Message.Text_Outline_Width;
 };
+
 
 ChoiceEngine.Message._terminateMessage = Window_Message.prototype.terminateMessage;
 Window_Message.prototype.terminateMessage = function() {
@@ -274,38 +346,18 @@ Window_Message.prototype.terminateMessage = function() {
     }
 };
 
-//-----------------------------------------------------------------------------
-//  Window_Tail
-//-----------------------------------------------------------------------------
-
-Window_Tail = function(name) {
-    arguments.name = name;
-    this.initialize.apply(this, arguments);
-}
-
-Window_Tail.prototype = Object.create(Sprite_Base.prototype);
-Window_Tail.prototype.constructor = Window_Tail;
-
-Window_Tail.prototype.initialize = function() {
-    Sprite_Base.prototype.initialize.call(this);
-    this.createBitmap();
+Window_Message.prototype.messageTail = function() {
+	this._tail = new Sprite();
+	this._tail.bitmap = ImageManager.loadSystem('WindowArrow');
+	this._tail.opacity = 255;
+	this._tail.x = (this.width /2) - 25;
+	this._tail.y = this.height - 5;
+    this.addChild(this._tail);
 };
 
-Window_Tail.prototype.createBitmap = function() {
-    this.bitmap = ImageManager.loadPicture('WindowArrow');
-}
-
-Window_Tail.prototype.update = function() {
-    Sprite_Base.prototype.update.call(this);
-    this.updatePosition();
+Window_Message.prototype.newLineX = function() {
+    return $gameMessage.faceName() === '' ? 6 : 168;
 };
-
-Window_Tail.prototype.updatePosition = function() {
-    this.x = Graphics.boxWidth / 2 - 20;
-    this.y = 175;
-};
-
-
 
 
 
