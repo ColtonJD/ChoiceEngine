@@ -112,19 +112,25 @@ ChoiceEngine.Message = ChoiceEngine.Message || {};
 * 
 */
 
-ChoiceEngine.Message.Params = PluginManager.parameters('ChoiceMessage');
-ChoiceEngine.Message.Target_Y_Offset = Number(ChoiceEngine.Message.Params['Target Offset Y']);
-ChoiceEngine.Message.Target_X_Offset = Number(ChoiceEngine.Message.Params['Target Offset X']);
-ChoiceEngine.Message.Name_Size = Number(ChoiceEngine.Message.Params['Name Text Size']);
-ChoiceEngine.Message.Name_Color = Number(ChoiceEngine.Message.Params['Name Color Code']);
-ChoiceEngine.Message.Name_Outline = Number(ChoiceEngine.Message.Params['Name Outline Color Code']);
-ChoiceEngine.Message.Name_Outline_Width = Number(ChoiceEngine.Message.Params['Name Outline Width']);
-ChoiceEngine.Message.Text_Size = Number(ChoiceEngine.Message.Params['Message Text Size']);
-ChoiceEngine.Message.Text_Color = Number(ChoiceEngine.Message.Params['Text Color Code']);
-ChoiceEngine.Message.Text_Outline = Number(ChoiceEngine.Message.Params['Text Outline Color Code']);
-ChoiceEngine.Message.Text_Outline_Width = Number(ChoiceEngine.Message.Params['Text Outline Width']);
+
 
 (function() {
+
+//-----------------------------------------------------------------------------
+//  Parameters
+//-----------------------------------------------------------------------------
+
+    ChoiceEngine.Message.Params = PluginManager.parameters('ChoiceMessage');
+    ChoiceEngine.Message.Target_Y_Offset = Number(ChoiceEngine.Message.Params['Target Offset Y']);
+    ChoiceEngine.Message.Target_X_Offset = Number(ChoiceEngine.Message.Params['Target Offset X']);
+    ChoiceEngine.Message.Name_Size = Number(ChoiceEngine.Message.Params['Name Text Size']);
+    ChoiceEngine.Message.Name_Color = Number(ChoiceEngine.Message.Params['Name Color Code']);
+    ChoiceEngine.Message.Name_Outline = Number(ChoiceEngine.Message.Params['Name Outline Color Code']);
+    ChoiceEngine.Message.Name_Outline_Width = Number(ChoiceEngine.Message.Params['Name Outline Width']);
+    ChoiceEngine.Message.Text_Size = Number(ChoiceEngine.Message.Params['Message Text Size']);
+    ChoiceEngine.Message.Text_Color = Number(ChoiceEngine.Message.Params['Text Color Code']);
+    ChoiceEngine.Message.Text_Outline = Number(ChoiceEngine.Message.Params['Text Outline Color Code']);
+    ChoiceEngine.Message.Text_Outline_Width = Number(ChoiceEngine.Message.Params['Text Outline Width']);
 
 //-----------------------------------------------------------------------------
 //  Game_Message
