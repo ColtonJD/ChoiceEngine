@@ -63,7 +63,7 @@ ChoiceEngine.Message = ChoiceEngine.Message || {};
  * 
  * @param Target Offset X
  * @desc X Offset for Targeted Messages
- * @default 0
+ * @default 150
  * 
  * @param Target Offset Y
  * @desc Y Offset for Targeted Messages
@@ -283,7 +283,6 @@ Window_Message.prototype.buildText = function() {
         maxWidth = 500;
     }else{
         maxWidth = Graphics.boxWidth - this.standardPadding() * 2;
-        console.log(maxWidth);
     }
     var longestLineLength = 0;
     var currentLineText = [];
@@ -326,18 +325,92 @@ Window_Message.prototype.createCharName = function(name) {
 }
 
 Window_Message.prototype.customPlacement = function(targetid) {
-    
-    
-    if (targetid > 0) { 
-        var ev = $gameMap.event(targetid);
-        this.x = ev.screenX() - (this.width / 2) + ChoiceEngine.Message.Target_X_Offset;
-        this.y = ev.screenY() - this.height - ChoiceEngine.Message.Target_Y_Offset;
-    } else if (targetid == 0){
-        this.x = $gamePlayer.screenX() - (this.width / 2) + ChoiceEngine.Message.Target_X_Offset;
-        this.y = $gamePlayer.screenY() - this.height - ChoiceEngine.Message.Target_Y_Offset;
+    var tailDirection = 'up'; 
+    var targetTemp = ''; 
+
+    if (targetid > 0) {
+        targetTemp = $gameMap.event(targetid); 
+    } else {
+        targetTemp = $gamePlayer;
     }
-    this.messageTail();
-    this._goldWindow.y = this.y > 0 ? 0 : Graphics.boxHeight - this._goldWindow.height;
+    
+    this.x = targetTemp.screenX()- (this.width / 2);
+    this.y = targetTemp.screenY() - this.height - ChoiceEngine.Message.Target_Y_Offset;
+
+    if (this.x + this.width > Graphics.boxWidth) {
+        this.x = targetTemp.screenX() - (this.width + ChoiceEngine.Message.Target_X_Offset);
+        this.y = Math.max (targetTemp.screenY() - (this.height / 2) - 60, 5);
+        //Hardcoded Sprite Sizes (currently at 60) needs to be fixed
+        if (this.y == 5){
+            //hardcoded that 5 for padding. Should fix that to be a variable
+            tailDirection = 'leftReach'
+        } else{
+            tailDirection = 'left';
+        }
+    } else if (this.x < 0){
+        this.x = targetTemp.screenX() + ChoiceEngine.Message.Target_X_Offset;
+        this.y = Math.max (targetTemp.screenY() - (this.height / 2) - 60, 5);
+        //Hardcoded Sprite Sizes (currently at 60) needs to be fixed
+        if (this.y == 5){
+            //hardcoded that 5 for padding. Should fix that to be a variable
+            tailDirection = 'rightReach'
+        } else{
+            tailDirection = 'right';
+        }
+    }
+
+    if (tailDirection === 'up' && this.y < 0){
+            this.y = targetTemp.screenY();
+            tailDirection = 'down';
+            
+        } 
+
+    this.messageTail(tailDirection);
+};
+
+Window_Message.prototype.messageTail = function(tailDirection) {
+	this._tail = new Sprite();
+	this._tail.bitmap = ImageManager.loadSystem('WindowArrow');
+    this._tail.opacity = 255;
+
+    switch (tailDirection) {
+        case 'down':
+            this._tail.rotation = 180 * Math.PI / 180;
+            this._tail.y = 5;
+            this._tail.x = (this.width / 2) + 25;
+            break;
+
+        case 'right':
+            this._tail.rotation = 90 * Math.PI / 180;
+            this._tail.x = 5;
+            this._tail.y = (this.height / 2) - 25;
+            break;
+
+        case 'rightReach':
+            this._tail.rotation = 90 * Math.PI / 180;
+            this._tail.x = 5;
+            this._tail.y = (this.height / 2) - 50;
+            break;
+
+        case 'left':
+            this._tail.rotation = 270 * Math.PI / 180;
+            this._tail.x = (this.width) - 5;
+            this._tail.y = (this.height / 2) + 25;
+            break;
+
+        case 'leftReach':
+            this._tail.rotation = 270 * Math.PI / 180;
+            this._tail.x = (this.width) - 5;
+            this._tail.y = (this.height / 2);
+            break;
+
+        default:        
+            this._tail.x = (this.width / 2) - 25;
+            this._tail.y = this.height - 5;
+            break;
+    }
+
+    this.addChild(this._tail);
 };
 
 Window_Message.prototype.centerPlacement = function(text) {
@@ -378,14 +451,6 @@ Window_Message.prototype.terminateMessage = function() {
     }
 };
 
-Window_Message.prototype.messageTail = function() {
-	this._tail = new Sprite();
-	this._tail.bitmap = ImageManager.loadSystem('WindowArrow');
-	this._tail.opacity = 255;
-	this._tail.x = (this.width /2) - 25;
-	this._tail.y = this.height - 5;
-    this.addChild(this._tail);
-};
 
 Window_Message.prototype._refreshPauseSign = function() {
     var sx = 144;
