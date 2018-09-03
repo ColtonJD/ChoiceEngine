@@ -242,7 +242,7 @@ Window_CharName.prototype.resetFontSettings = function() {
 //-----------------------------------------------------------------------------
 
 Window_Message.prototype.startMessage = function() {
-    
+//Kinda Spaghetti, but it works so I'm leaving it
     this._textState = {};
     this._textState.index = 0;
     this._textState.text = this.buildText();
@@ -255,22 +255,16 @@ Window_Message.prototype.startMessage = function() {
         this.windowskin = ImageManager.loadSystem('Window_Message');   
         this._refreshAllParts();
         this.newPage(this._textState);
-        this.width = ($gameMessage._msgLength + this.standardPadding() * 2);
-        this.height = this.calcTextHeight(this._textState, true) + this.standardPadding() * 2 + 10;
         this.customPlacement($gameMessage._targetid);
     }else if($gameMessage._center === true){
         this.windowskin = ImageManager.loadSystem('Window'); 
         this._refreshAllParts();
         this.newPage(this._textState);
-        this.width = ($gameMessage._msgLength + this.standardPadding() * 2);
-        this.height = this.calcTextHeight(this._textState, true) + this.standardPadding() * 2 + 10;
-        this.centerPlacement(this._textState.text);
+        this.centerPlacement();
         
     }else{
         this.windowskin = ImageManager.loadSystem('Window');
         this._refreshAllParts();
-        this.width = Graphics.boxWidth;
-        this.height = 4 * 40 + this.standardPadding() * 2;
         this.newPage(this._textState);
         this.updatePlacement();
     }
@@ -299,7 +293,6 @@ Window_Message.prototype.buildText = function() {
     var builtMsg = [];
     for (j = 0; j < text.length; j++){
         var wordLength = this.textWidthCheck(text[j]);
-        console.log('Word Length: ' + wordLength);
         if((currentLineLength + wordLength) > maxWidth){
             longestLineLength = Math.max(longestLineLength, currentLineLength);
             currentLineLength = 0;
@@ -344,6 +337,10 @@ Window_Message.prototype.createCharName = function(name) {
 }
 
 Window_Message.prototype.customPlacement = function(targetid) {
+    
+    this.width = ($gameMessage._msgLength + this.standardPadding() * 2);
+    this.height = this.calcTextHeight(this._textState, true) + this.standardPadding() * 2 + 10;
+    
     var tailDirection = 'up'; 
     var targetTemp = ''; 
 
@@ -432,14 +429,31 @@ Window_Message.prototype.messageTail = function(tailDirection) {
     this.addChild(this._tail);
 };
 
-Window_Message.prototype.centerPlacement = function(text) {
-    this.x = (Graphics.boxWidth / 2) - (this.width / 2);
-    this.y = (Graphics.boxHeight / 2) - (this.height / 2);
+ChoiceEngine.Message._newPage = Window_Message.prototype.newPage;
+Window_Message.prototype.newPage = function (textState) {
+    ChoiceEngine.Message._newPage.call(this, textState);
+    if ($gameMessage._center === true && $gameMessage.background() == 1){
+        textState.x = (Graphics.boxWidth - ($gameMessage._msgLength)) / 2;
+    }
+}
+
+Window_Message.prototype.centerPlacement = function() {
+    this._background = $gameMessage.background();
+    if (this._background == 1){
+        this.contents.x = (Graphics.boxWidth / 2) - (this.width / 2);
+    } else {
+        this.width = ($gameMessage._msgLength + this.standardPadding() * 2);
+        this.x = (Graphics.boxWidth / 2) - (this.width / 2);    
+    }
+    this.height = this.calcTextHeight(this._textState, true) + this.standardPadding() * 2 + 10;
+    this.y = (Graphics.boxHeight / 2) - (this.height / 2) - 48;
 };
 
 ChoiceEngine.Message._updatePlacement = Window_Message.prototype.updatePlacement
 Window_Message.prototype.updatePlacement = function() {
     ChoiceEngine.Message._updatePlacement.call(this);
+    this.width = Graphics.boxWidth;
+    this.height = 4 * 40 + this.standardPadding() * 2;
     this.x = 0;
 };
 
