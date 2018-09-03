@@ -21,43 +21,48 @@ ChoiceEngine.Message = ChoiceEngine.Message || {};
  * @desc Graphic that connects to the speech bubble. 
  * @default Pointer1
  *
+ * @param Message Padding
+ * @desc Padding added around all message edges.
+ * @ type number 
+ * @default 20
+ * 
  * @param Message Text Size
- * @type number;
+ * @type number
  * @desc Font size for names. 
  * @default 24
  * 
  * @param Text Color Code
- * @type number;
+ * @type number
  * @desc Color code for message text. 
  * @default 15
  * 
  * @param Text Outline Color Code
- * @type number;
+ * @type number
  * @desc Color code for message text outline. 
  * @default 15
  * 
  * @param Text Outline Width
- * @type number;
+ * @type number
  * @desc Width of the message outline color
  * @default 0
  * 
  * @param Name Text Size
- * @type number;
+ * @type number
  * @desc Font size for names. 
  * @default 32
  * 
  * @param Name Color Code
- * @type number;
+ * @type number
  * @desc Color code for character names. 
  * @default 15
  * 
  * @param Name Outline Color Code
- * @type number;
+ * @type number
  * @desc Color code for character name outline. 
  * @default 27
  * 
  * @param Name Outline Width
- * @type number;
+ * @type number
  * @desc Width of the name outline color
  * @default 7
  * 
@@ -121,6 +126,7 @@ ChoiceEngine.Message = ChoiceEngine.Message || {};
 //-----------------------------------------------------------------------------
 
     ChoiceEngine.Message.Params = PluginManager.parameters('ChoiceMessage');
+    ChoiceEngine.Message.Message_Padding = Number(ChoiceEngine.Message.Params['Message Padding']);
     ChoiceEngine.Message.Target_Y_Offset = Number(ChoiceEngine.Message.Params['Target Offset Y']);
     ChoiceEngine.Message.Target_X_Offset = Number(ChoiceEngine.Message.Params['Target Offset X']);
     ChoiceEngine.Message.Name_Size = Number(ChoiceEngine.Message.Params['Name Text Size']);
@@ -249,15 +255,15 @@ Window_Message.prototype.startMessage = function() {
         this.windowskin = ImageManager.loadSystem('Window_Message');   
         this._refreshAllParts();
         this.newPage(this._textState);
-        this.width = ($gameMessage._msgLength + this.standardPadding() * 2)
-        this.height = this.fittingHeight($gameMessage._msgRows);
+        this.width = ($gameMessage._msgLength + this.standardPadding() * 2);
+        this.height = this.calcTextHeight(this._textState, true) + this.standardPadding() * 2 + 10;
         this.customPlacement($gameMessage._targetid);
     }else if($gameMessage._center === true){
         this.windowskin = ImageManager.loadSystem('Window'); 
         this._refreshAllParts();
         this.newPage(this._textState);
-        this.width = ($gameMessage._msgLength + this.standardPadding() * 2)
-        this.height = this.fittingHeight($gameMessage._msgRows);
+        this.width = ($gameMessage._msgLength + this.standardPadding() * 2);
+        this.height = this.calcTextHeight(this._textState, true) + this.standardPadding() * 2 + 10;
         this.centerPlacement(this._textState.text);
         
     }else{
@@ -273,6 +279,9 @@ Window_Message.prototype.startMessage = function() {
     this.open();
 };
 
+Window_Message.prototype.standardPadding = function() {
+    return ChoiceEngine.Message.Message_Padding;
+};
 
 Window_Message.prototype.buildText = function() {
     var maxWidth = 0;
@@ -289,7 +298,8 @@ Window_Message.prototype.buildText = function() {
     var currentLineLength = 0;
     var builtMsg = [];
     for (j = 0; j < text.length; j++){
-        wordLength = this.textWidthEx(text[j]);
+        var wordLength = this.textWidthCheck(text[j]);
+        console.log('Word Length: ' + wordLength);
         if((currentLineLength + wordLength) > maxWidth){
             longestLineLength = Math.max(longestLineLength, currentLineLength);
             currentLineLength = 0;
@@ -311,12 +321,21 @@ Window_Message.prototype.buildText = function() {
         }
     }
     $gameMessage._msgLength = longestLineLength;
-    $gameMessage._msgRows = builtMsg.length;
     return builtMsg.join('');
 }
 
-Window_Message.prototype.textWidthEx = function(text) {
-    return this.drawTextEx(text, 0, this.contents.height);
+Window_Message.prototype.textWidthCheck = function(text) {
+    if (text) {
+        var textState = { index: 0, x: 0, y: this.contents.height, left: 0 };
+        textState.text = this.convertEscapeCharacters(text);
+        textState.height = this.calcTextHeight(textState, false);
+        while (textState.index < textState.text.length) {
+            this.processCharacter(textState);
+        }
+        return textState.x;
+    } else {
+        return 0;
+    }
 };
 
 Window_Message.prototype.createCharName = function(name) {
@@ -414,8 +433,6 @@ Window_Message.prototype.messageTail = function(tailDirection) {
 };
 
 Window_Message.prototype.centerPlacement = function(text) {
-    this.height = 40 + this.standardPadding() * 2;
-    this.width = this.contents.measureTextWidth(text) + (this.standardPadding() * 3);
     this.x = (Graphics.boxWidth / 2) - (this.width / 2);
     this.y = (Graphics.boxHeight / 2) - (this.height / 2);
 };
@@ -433,7 +450,6 @@ Window_Message.prototype.resetFontSettings = function() {
     } else {
         this.contents.fontFace = 'GameFont';
     }
-    
     this.contents.fontSize = ChoiceEngine.Message.Text_Size;
     this.changeTextColor(this.textColor(ChoiceEngine.Message.Text_Color));
     this.contents.outlineColor = this.textColor(ChoiceEngine.Message.Text_Outline);
@@ -449,8 +465,13 @@ Window_Message.prototype.terminateMessage = function() {
     if(this._charName){
         this.removeChild(this._charName)
     }
+    this.resetFontSettings();
+    $gameMessage._target = false;
+    $gameMessage._targetid = undefined;
+    $gameMessage._center = false;
+    $gameMessage._speaker = false;
+    $gameMessage._speakerName = undefined;
 };
-
 
 Window_Message.prototype._refreshPauseSign = function() {
     var sx = 144;
@@ -467,8 +488,5 @@ Window_Message.prototype._refreshPauseSign = function() {
     this._windowPauseSignSprite.setFrame(sx, sy, p, p);
     this._windowPauseSignSprite.alpha = 0;
 };
-
-
-
 
 })();
