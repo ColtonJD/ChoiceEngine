@@ -91,23 +91,26 @@ ChoiceEngine.Message = ChoiceEngine.Message || {};
 *  (Done via convertEscapeCharacters)
 *  /target[target] (target an event or player)
 * Returns: void
-*
-* Function: Window_Message.prototype.centerPlacement(text)
-* Desc: Centers the window_message to the center x/y positions
-* Matches on:
-* /center
-* Returns: void 
 * 
 * Function: Window_Message.prototype.buildText()
 * Desc: Calls $gameMessage.allText(), converts escape characters, and rebuilds
 * the text to be formatted to wrap based on the lineWidth. 
 * Returns: Text string with properly place /n
 * 
+* Function: Window_Message.prototype.customPlacement(targetid)
+* Desc: Updates the x/y positions of the Message_window relative to a 
+* targetid. Checks for the message tail dirction and creates it 
+* Returns: void
+*
+* Function: Window_Message.prototype.windowDimensions(type)
+* Desc: Size the Message_Window based on a type
+* Returns: void
+*
 * Function: Window_Message.prototype.createCharName(name)
 * Desc: Used to instantiate the new Window_CharName
 * Returns: void
 *
-* Function: Window_Message.prototype.createTail()
+* Function: Window_Message.prototype.messageTail()
 * Desc: Draws the message tail for targetted messages 
 * Returns: void
 *
@@ -247,26 +250,27 @@ Window_Message.prototype.startMessage = function() {
     this._textState.index = 0;
     this._textState.text = this.buildText();
 
-    if($gameMessage._speaker === true){
-        this.createCharName($gameMessage._speakerName);
-    }
-
     if($gameMessage._target === true){
         this.windowskin = ImageManager.loadSystem('Window_Message');   
         this._refreshAllParts();
         this.newPage(this._textState);
+        this.windowDimensions('target');
         this.customPlacement($gameMessage._targetid);
     }else if($gameMessage._center === true){
         this.windowskin = ImageManager.loadSystem('Window'); 
         this._refreshAllParts();
         this.newPage(this._textState);
-        this.centerPlacement();
-        
+        this.windowDimensions('center');
     }else{
         this.windowskin = ImageManager.loadSystem('Window');
         this._refreshAllParts();
         this.newPage(this._textState);
+        this.windowDimensions('default');
         this.updatePlacement();
+    }
+
+    if($gameMessage._speaker === true){
+        this.createCharName($gameMessage._speakerName);
     }
 
     this.updateBackground();
@@ -333,14 +337,11 @@ Window_Message.prototype.textWidthCheck = function(text) {
 
 Window_Message.prototype.createCharName = function(name) {
     this._charName = new Window_CharName(name);
-    this.addChild(this._charName);
+    this.addChildAt(this._charName, 2);
 }
 
 Window_Message.prototype.customPlacement = function(targetid) {
-    
-    this.width = ($gameMessage._msgLength + this.standardPadding() * 2);
-    this.height = this.calcTextHeight(this._textState, true) + this.standardPadding() * 2 + 10;
-    
+
     var tailDirection = 'up'; 
     var targetTemp = ''; 
 
@@ -384,7 +385,36 @@ Window_Message.prototype.customPlacement = function(targetid) {
     this.messageTail(tailDirection);
 };
 
+Window_Message.prototype.windowDimensions = function(type) {
+    switch(type){
+        case 'target':
+            this.width = ($gameMessage._msgLength + this.standardPadding() * 2);
+            this.height = this.calcTextHeight(this._textState, true) + this.standardPadding() * 2 + 10;
+            break;
+        case 'center':
+            this._background = $gameMessage.background();
+            if (this._background == 1){
+                this.contents.x = (Graphics.boxWidth / 2) - (this.width / 2);
+            } else {
+                this.width = ($gameMessage._msgLength + this.standardPadding() * 2);
+                this.x = (Graphics.boxWidth / 2) - (this.width / 2);    
+            }
+            this.height = this.calcTextHeight(this._textState, true) + this.standardPadding() * 2 + 10;
+            this.y = (Graphics.boxHeight / 2) - (this.height / 2) - 48;
+            break;
+        default:
+            this.width = Graphics.boxWidth;
+            this.height = 4 * 40 + this.standardPadding() * 2;
+            this.x = 0;
+            break;
+    }
+
+};
+
 Window_Message.prototype.messageTail = function(tailDirection) {
+    if(this._tail){
+        this.removeChild(this._tail)
+    }
 	this._tail = new Sprite();
 	this._tail.bitmap = ImageManager.loadSystem('WindowArrow');
     this._tail.opacity = 255;
@@ -392,7 +422,7 @@ Window_Message.prototype.messageTail = function(tailDirection) {
     switch (tailDirection) {
         case 'down':
             this._tail.rotation = 180 * Math.PI / 180;
-            this._tail.y = 5;
+            this._tail.y = 3;
             this._tail.x = (this.width / 2) + 25;
             break;
 
@@ -425,8 +455,15 @@ Window_Message.prototype.messageTail = function(tailDirection) {
             this._tail.y = this.height - 5;
             break;
     }
+    this.addChildAt(this._tail, 1);
+};
 
-    this.addChild(this._tail);
+ChoiceEngine.Message._update = Window_Message.prototype.update;
+Window_Message.prototype.update = function() {
+    ChoiceEngine.Message._update.call(this);
+    if ($gameMessage._target == true){
+        this.customPlacement($gameMessage._targetid);
+    } 
 };
 
 ChoiceEngine.Message._newPage = Window_Message.prototype.newPage;
@@ -436,26 +473,6 @@ Window_Message.prototype.newPage = function (textState) {
         textState.x = (Graphics.boxWidth - ($gameMessage._msgLength)) / 2;
     }
 }
-
-Window_Message.prototype.centerPlacement = function() {
-    this._background = $gameMessage.background();
-    if (this._background == 1){
-        this.contents.x = (Graphics.boxWidth / 2) - (this.width / 2);
-    } else {
-        this.width = ($gameMessage._msgLength + this.standardPadding() * 2);
-        this.x = (Graphics.boxWidth / 2) - (this.width / 2);    
-    }
-    this.height = this.calcTextHeight(this._textState, true) + this.standardPadding() * 2 + 10;
-    this.y = (Graphics.boxHeight / 2) - (this.height / 2) - 48;
-};
-
-ChoiceEngine.Message._updatePlacement = Window_Message.prototype.updatePlacement
-Window_Message.prototype.updatePlacement = function() {
-    ChoiceEngine.Message._updatePlacement.call(this);
-    this.width = Graphics.boxWidth;
-    this.height = 4 * 40 + this.standardPadding() * 2;
-    this.x = 0;
-};
 
 Window_Message.prototype.resetFontSettings = function() {
     
