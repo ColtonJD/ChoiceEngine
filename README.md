@@ -1,5 +1,5 @@
 # ChoiceEngine
-Choice Engine Plugins for RPG Maker MV. This is a collection of plugins designed to enhance the RPGMaker MV experience and provide a more complete and flexible development experience for game creators. Plugins have been primarily tested using assests from the (Time Fantasy)[http://timefantasy.net/] style assets. 
+Choice Engine Plugins for RPG Maker MV. This is a collection of plugins designed to enhance the RPGMaker MV experience and provide a more complete and flexible development experience for game creators. Plugins have been primarily tested using assests from the [Time Fantasy](http://timefantasy.net/) style assets. 
 
 ### Prerequisites
 
