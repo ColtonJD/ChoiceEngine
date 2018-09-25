@@ -1,13 +1,13 @@
 # ChoiceEngine
 Choice Engine Plugins for RPG Maker MV. This is a collection of plugins designed to enhance the RPGMaker MV experience and provide a more complete and flexible development experience for game creators. Plugins have been primarily tested using [Time Fantasy](http://timefantasy.net/) style assets. 
 
-### Prerequisites
+## Prerequisites
 
 What things you need to install the software and how to install them
 
 RPG Maker MV v 1.6.0 or newer.
 
-### Installing
+## Installing
 
 1. If you do not have the ChoiceCore.js plugin installed, you must install that first. 
 2. Select the plugin .js file you wish to add into your game.
