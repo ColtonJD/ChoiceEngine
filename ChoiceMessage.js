@@ -340,6 +340,7 @@ Window_Message.prototype.createCharName = function(name) {
     this.addChildAt(this._charName, 2);
 }
 
+//Need to fix delay here where \| or \. delays the actual message starting
 Window_Message.prototype.customPlacement = function(targetid) {
 
     var tailDirection = 'up'; 
