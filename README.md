@@ -34,6 +34,7 @@ The choice bubble dialouge system. This plugin allows you to anchor dialouge to 
 3. The ChoiceMessage plugin require a 'Window Arrow' to be saved into the img/system folder. 
 4. You must also provide a custom Window_Message image in the same folder. 
 (Included in this repository are the images from the example screenshot. Find those files in the /img folder.)
+5. The fonts css file (found in fonts/gamefont.css) must load in a new GameFont and MessageFont. You may set this to whatever you like. I have included an example in the repo under \font.
 
 #### Usage
 Message boxes will work as they normally would unless you include one of the following commands:
