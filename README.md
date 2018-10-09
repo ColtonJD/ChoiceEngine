@@ -16,10 +16,11 @@ RPG Maker MV v 1.6.0 or newer.
 
 ## Plugin Descriptions
 
-###ChoiceCore.js
+### ChoiceCore.js
 Coe funcitonality. This is required for all other plugins
 
-###ChoiceMessage.js
+### ChoiceMessage.js
+![Demo ChoiceMessage.js screenshot of bubble text](img\ChoiceMessage.png "Example Dialouge")
 The choice bubble dialouge system. This plugin allows you to anchor dialouge to the player or a specific event. You may also draw an indicator from the speaking player/event to the dialouge. Additional dialouge commands allow the automatic centering and resizing of messages. Finally, the text boxes will automatically react to screen edges and follow moving events. 
 
 ## Contributing
