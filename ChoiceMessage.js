@@ -257,7 +257,7 @@ Window_Message.prototype.startMessage = function() {
         this.windowDimensions('target');
         this.customPlacement($gameMessage._targetid);
     }else if($gameMessage._center === true){
-        this.windowskin = ImageManager.loadSystem('Window'); 
+        this.windowskin = ImageManager.loadSystem('Window_Message'); 
         this._refreshAllParts();
         this.newPage(this._textState);
         this.windowDimensions('center');
