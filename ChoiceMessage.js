@@ -203,6 +203,10 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
         $gameMessage._center = true;
         return '';
     });
+    text = text.replace(/\x1bMSGFADEOUT/gi, function(){
+        $gameMessage._messageFadeOut = 330;
+        return '';
+    });
     return text;
 };
 
@@ -249,6 +253,7 @@ Window_Message.prototype.startMessage = function() {
     this._textState = {};
     this._textState.index = 0;
     this._textState.text = this.buildText();
+    this.contentsOpacity = 255;
 
     if($gameMessage._target === true){
         this.windowskin = ImageManager.loadSystem('Window_Message');   
@@ -464,7 +469,16 @@ Window_Message.prototype.update = function() {
     ChoiceEngine.Message._update.call(this);
     if ($gameMessage._target == true){
         this.customPlacement($gameMessage._targetid);
-    } 
+    }
+    
+    if ($gameMessage._messageFadeOut > 90){
+        $gameMessage._messageFadeOut--; 
+    } else if ($gameMessage._messageFadeOut <= 90 && $gameMessage._messageFadeOut > 0) {
+        this.contentsOpacity -= 10;
+        $gameMessage._messageFadeOut--; 
+    }else {
+
+    } ;
 };
 
 ChoiceEngine.Message._newPage = Window_Message.prototype.newPage;
@@ -481,7 +495,7 @@ Window_Message.prototype.resetFontSettings = function() {
         this.contents.fontFace = 'MessageFont';
     } else {
         this.contents.fontFace = 'GameFont';
-    }
+    } 
     this.contents.fontSize = ChoiceEngine.Message.Text_Size;
     this.changeTextColor(this.textColor(ChoiceEngine.Message.Text_Color));
     this.contents.outlineColor = this.textColor(ChoiceEngine.Message.Text_Outline);
@@ -503,6 +517,7 @@ Window_Message.prototype.terminateMessage = function() {
     $gameMessage._center = false;
     $gameMessage._speaker = false;
     $gameMessage._speakerName = undefined;
+    $gameMessage._messageFadeOut = 0;
 };
 
 Window_Message.prototype._refreshPauseSign = function() {
