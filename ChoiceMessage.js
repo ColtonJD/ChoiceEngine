@@ -521,6 +521,7 @@ Window_Message.prototype._refreshPauseSign = function() {
     this._windowPauseSignSprite.alpha = 0;
 };
 
+
 //-----------------------------------------------------------------------------
 //  Window_mapName
 //-----------------------------------------------------------------------------
