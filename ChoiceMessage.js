@@ -521,4 +521,16 @@ Window_Message.prototype._refreshPauseSign = function() {
     this._windowPauseSignSprite.alpha = 0;
 };
 
+//-----------------------------------------------------------------------------
+//  Window_mapName
+//-----------------------------------------------------------------------------
+
+Window_MapName.prototype.refresh = function() {
+    this.contents.clear();
+    if ($gameMap.displayName()) {
+        var width = this.contentsWidth();
+        this.drawText($gameMap.displayName(), 0, 0, width, 'center');
+    }
+};
+
 })();
